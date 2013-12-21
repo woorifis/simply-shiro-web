@@ -8,3 +8,6 @@
     <input type="checkbox" name="rememberMe" value="true"/>Remember Me?<br/>     
     <input type="submit"/>
 </form>
+
+
+${shiroLoginFailure}

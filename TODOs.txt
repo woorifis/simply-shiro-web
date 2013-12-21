@@ -1,6 +1,5 @@
 
 
-* login fail mesg?
 
 * remember me?
 
@@ -11,6 +10,11 @@
 
 ---- DONE ----
 
+
+* login fail mesg?
+	- ${shiroLoginFailure}
+	- request.getAttribute("shiroLoginFailure");
+	- 문자열임. ㅎㅎ 
 
 
 ###EOF
