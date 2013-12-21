@@ -2,8 +2,10 @@
 
 
 * remember me?
+	- SEE: http://shiro.apache.org/web.html#Web-RememberMeServices
 
 * native-session?
+	- SEE: http://shiro.apache.org/session-management.html
 
 
 
