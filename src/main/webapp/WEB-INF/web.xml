@@ -20,6 +20,7 @@
     
     
 
+	<!-- NOTE: 이 리스너가 /WEB-INF/shiro.ini이나 classpath:shiro.ini을 로딩. -->
     <listener>
         <listener-class>org.apache.shiro.web.env.EnvironmentLoaderListener</listener-class>
     </listener>
