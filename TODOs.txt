@@ -1,11 +1,10 @@
 
 
 
-* remember me?
-	- SEE: http://shiro.apache.org/web.html#Web-RememberMeServices
-
-* native-session?
+* shiro-native-session?
 	- SEE: http://shiro.apache.org/session-management.html
+	
+	- http://grokbase.com/t/shiro/user/097qez5sys/exception-there-is-no-session-with-id
 
 
 
@@ -17,6 +16,12 @@
 	- ${shiroLoginFailure}
 	- request.getAttribute("shiroLoginFailure");
 	- 문자열임. ㅎㅎ 
+
+
+* remember me?
+	- SEE: http://shiro.apache.org/web.html#Web-RememberMeServices
+	- 음.. 안먹는거 같음. ㅎ
+
 
 
 ###EOF
