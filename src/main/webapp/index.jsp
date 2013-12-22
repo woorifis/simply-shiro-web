@@ -1,3 +1,4 @@
+<%@ page import="org.apache.shiro.SecurityUtils" %>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@ taglib prefix="shiro" uri="http://shiro.apache.org/tags" %>
 
@@ -9,6 +10,12 @@
     </head>
     <body>
         <h1>Hello World!</h1>
-        Hello, <shiro:principal/>, how are you today?       
+        <%@ include file="_mesg.jsp"%>
+        <hr/>
+        <ul>
+            <li><a href="/restricted.jsp">RESTRICTED</a>: authentication needs.</li>
+            <li><a href="/privileged.jsp">PRIVILEGED</a>: only 'special' roles allowed.</li>
+            <li><a href="/logout">LOGOUT</a></li>
+        </ul>
     </body>
 </html>

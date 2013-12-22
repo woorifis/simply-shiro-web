@@ -9,6 +9,7 @@
     </head>
     <body>
         <h1>PRIVILEGED: Hello World!</h1>
-        Hello, <shiro:principal/>, how are you today?       
+        <%@ include file="_mesg.jsp"%>
+        <a href="/index.jsp">INDEX</a>
     </body>
 </html>

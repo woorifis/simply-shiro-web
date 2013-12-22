@@ -8,9 +8,7 @@
 
 
 
-* remember me?
-	- SEE: http://shiro.apache.org/web.html#Web-RememberMeServices
-	- 음.. 안먹는거 같음. ㅎ
+
 
 
 
@@ -26,6 +24,11 @@
 
 
 
+* remember me?
+	- SEE: http://shiro.apache.org/web.html#Web-RememberMeServices
+	    - rememberMe으로 얻은 권한은 authenticated이 아니라, user 상태임.
+	    - <shiro:authenticated/>이 아니라 <shiro:user/>이 다르고.
+	    - shiro.ini에서도 authc 필터가 아니라 user 필터로 검사.
 
 
 ###EOF
