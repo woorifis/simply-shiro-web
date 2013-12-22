@@ -1,19 +1,4 @@
 
-
-
-* shiro-native-session?
-	- SEE: http://shiro.apache.org/session-management.html
-	
-	- http://grokbase.com/t/shiro/user/097qez5sys/exception-there-is-no-session-with-id
-
-
-
-
-
-
-
-
-
 ---- DONE ----
 
 
@@ -29,6 +14,18 @@
 	    - rememberMe으로 얻은 권한은 authenticated이 아니라, user 상태임.
 	    - <shiro:authenticated/>이 아니라 <shiro:user/>이 다르고.
 	    - shiro.ini에서도 authc 필터가 아니라 user 필터로 검사.
+
+
+
+
+* shiro-native-session?
+	- SEE: http://shiro.apache.org/session-management.html
+	- http://grokbase.com/t/shiro/user/097qez5sys/exception-there-is-no-session-with-id
+	- securityManager.sessionManager와 sessionDAO을 같이 설정하니 잘 굴러가는듯.
+
+    	This implementation defaults to using an in-memory map-based CacheManager, which is great for testing but will typically not scale for production environments and could easily cause OutOfMemoryExceptions. Just don't forget to configure* an instance of this class with a production-grade CacheManager that can handle disk paging for large numbers of sessions and you'll be fine.
+
+    - securityManager.cacheManager도 같이 설정해줘야함. ㅎㅎ
 
 
 ###EOF
