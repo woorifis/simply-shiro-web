@@ -8,6 +8,13 @@
 
 
 
+* remember me?
+	- SEE: http://shiro.apache.org/web.html#Web-RememberMeServices
+	- 음.. 안먹는거 같음. ㅎ
+
+
+
+
 
 ---- DONE ----
 
@@ -18,9 +25,6 @@
 	- 문자열임. ㅎㅎ 
 
 
-* remember me?
-	- SEE: http://shiro.apache.org/web.html#Web-RememberMeServices
-	- 음.. 안먹는거 같음. ㅎ
 
 
 
