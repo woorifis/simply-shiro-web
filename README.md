@@ -20,6 +20,16 @@ simply-shiro-web
   * ==Cryptography== : 비밀번호를 직접 평문(plaintext, cleartext)으로 저장하지 않고, 암호화하거나 체크섬을 저장하도록, [SHA](http://en.wikipedia.org/wiki/Secure_Hash_Algorithm)등의 **암호화 알고리즘을 사용하기 편리하도록 제공**. Java에서 이러한 기능은 별도의 프레임웍이나 [JCA](http://docs.oracle.com/javase/6/docs/technotes/guides/security/crypto/CryptoSpec.html)등을 통해서 사용하는데, 사용하기가 그렇게 편리하지는 않은데, Shiro에서는 그냥 딱 적절하게 동작하도록 잘 제공해줌. ㅎㅎ
   * ==Session Management== : [Java Servlet](http://en.wikipedia.org/wiki/Java_Servlet)의 [HttpSession](http://docs.oracle.com/javaee/6/api/javax/servlet/http/HttpSession.html) 을 사용할 수 있기도 하지만, **Native Session**이라는 이름으로 자체적인 세션 시스템을 제공한다. HttpSession을 사용하지 않고, 굳이 이런 Native Session을 사용하면, 대부분의 [Servlet Container](http://en.wikipedia.org/wiki/Web_container)에서 제대로 제공하지 않거나, 설정하기 끔찍한 클러스터링(clustered)한 여러 컨테이너들끼리 어떤 컨테이너로 로드밸런싱(load-balanced)하여 요청을 처리하더라도, 동일한 세션을 사용할 수 있도록 하는 [session clustering](http://tomcat.apache.org/tomcat-5.5-doc/cluster-howto.html)을 매우 간편하고 적절하게 사용할 수 있다. :-)
 
+그리고 내가 생각할 때 멋진 기능들은...
+
+  * Spring/Guice와 같은 DI프레임웍과의 연동도 이미 제공하고 있고,
+  * Spring WebMVC, Jersey와 같은 웹프레임웍과의 연동에 제약도 없고. 
+  * AOP을 통해 `@RequiresUser`와 같은 어노테이션으로 메서드를 지정하여 권한 검사를 지정할 수도 있고,  
+  * JSP Custom Tag등을 지원하여, `<shiro:authenticated>...</shiro:authenticated>` 같은 태그들을 통해 웹개발시에도 권한 검사에 따른 내용을 달리 표시
+
+그 이외에도 적용하면서, 상황에 따라 정말 유연하고 사용할만 하구나 느낄 수 있음. ㅎㅎ
+
+
 
 ## 왜 이걸 사용해야 하죠?
 
@@ -38,7 +48,23 @@ simply-shiro-web
 
 ## 적용 방식.
 
+  * 자바 애플리케이션에 직접 : http://shiro.apache.org/10-minute-tutorial.html
+  	* 자바 코드만으로 로그인, 권한 검사와 같은 것들을 어떻게 수행하는지. 자바 보안 프레임웍으로서 어떻게 적용하는지 보임.
+  	* Java Servlet/JSP, 혹은 Spring WebMVC등 웹애플리케이션에서는 실제로 이렇게 적용하지 않아도 되며, 내부적으로 어떻게 동작하는지 대략적인 흐름을 볼 수 있음.
+  	
+  * Java Servlet/JSP에서의 연동 : 이 README의 소스코드가 예제로 보이는 내용.
+    * Spring WebMVC와의 연동은 이하의 **Spring Web MVC와의 연동 예시** 부분을 참고.
+    * 참고: http://shiro.apache.org/webapp-tutorial.html
+    	* Stormapath을 기반으로 설명.
+    	* 어쨌든 완전한 모든 내용을 친절하게 소개하고 있지는 않지만, 개념을 잡기에 괜춘함.
+
+
 ## Spring Security와의 차이.
+
+[Spring Security](http://projects.spring.io/spring-security/) 보안 프레임웍도 보안 프레임웍으로서 Java만으로 사용할 수도 있고, Java Servlet/JSP와 함께 연동하여 사용할 수 있다. 물론, Spring Framework을 사용한다는 전제하에. ㅎㅎ Google Guice등을 활용하여 프로젝트를 하고 있다면, 적용하기 어렵다.
+
+그리고 더 큰 차이점은 내가 생각하기에, Spring Security의 경우에는 별로 내가 관심도 없는 내용들을 위해서 뭔가 필터를 세팅하고, 뭔가 어떤 마법과 같은 일들을 더 해줘야, 겨우 그럭저럭 동작하는 환경을 조성할 수 있는데 반해서, Apache Shiro의 경우에는 그런 제약도 없이 그냥 딱 내가 필요한 설정들만으로 적절하게 잘 동작한다는 점인거 같다.
+
 
 ## 다른 프레임웍과의 연동.
 
@@ -53,6 +79,9 @@ simply-shiro-web
   
 ### Stormpath?
 
+  * http://www.stormpath.com/
+  * Shiro을 사용하면서, 최소한 회원가입, 로그인을 위한 사용자-비밀번호(혹은 비밀번호의 체크섬 값)의 조회 로직과 같은 부분은 구현할 필요가 있음. 전자는 필요에 따라서 회원가입이 필요하다면, 구현해야하고, 그에 따라 확인 이메일 발송 등등의 또 다른 이슈들이 있고. 그런데, Stormpath에서 그런 내용들을 전부 구현하여 서비스로 제공하고, 이에 Shiro을 연동하여 바로 사용할 수 있다. ㅎㅎ
+  	* 참고: http://www.stormpath.com/blog/stormpath-apache-shiro-love
 
 
 
@@ -103,10 +132,6 @@ simply-shiro-web
 
 
 
- 
-* Spring Security와의 차이.
-
-자바 단독 라이브러리로서의 위상.
 
 Authentication, Authorization의 차이.
 
