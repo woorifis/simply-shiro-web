@@ -108,6 +108,11 @@ simply-shiro-web
   	* 실행한 다음 웹브라우저로 http://localhost:8080/ 을 열어봅니다.
 
 
+## 기타.
+
+  * 원래는 [logback](http://logback.qos.ch/)을 logging으로 [사용/설정](http://shiro.apache.org/webapp-tutorial.html#project-setup)이 원래 Shiro문서에 소개된 내용임.
+  	* ㅎㅎ 그리고 log4j보다는 logback이 더 나을거 같음. 그러나 저는 그냥 일단 log4j으로 예제를 올렸습니다. 꼭 log4j을 쓸 필요는 없고, 가능하면 logback쓰세요. ㅎㅎㅎ
+
 
 - - -
 
