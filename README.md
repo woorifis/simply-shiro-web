@@ -148,64 +148,299 @@ simply-shiro-web
 	2. Shiro이 구현하고 관리하는 Session인 Native Sessions을 활용하려면, `DefaultWebSessionManager`을 `SecurityManager`에 설정한다. 
 * **`SessionDAO`** : 세션을 어디에 저장하고 관리하는지에 대한 실제 내용.
 	* SessionManager을 Shiro Native Session을 사용하도록 설정했다면, Map을 통해 구현한 테스트용인 `MemorySessionDAO`이나, 이후에 소개할 CacheManager을 활용하는 `EnterpriseCacheSessionDAO`을 설정한다. 
-* **`Realm`** : 
-* `Subject`
-*  `Principal` 
-*  `UsernamePasswordToken`, *Credentials* 
+* **`Realm`** : 한 `SecurityManager`은 한개, 혹은 여러개의 `Realm`을 가질 수 있다. 그리고 어떤 사용자의 정보는 한 `Realm`에 속한다. 예를 들어, 직접 어떤 DB 테이블의 사용자 정보를 통해서 username-password을 체크하고, 그 사용자의 roles, permissions을 알려주고 하는 역할은 `Realm`을 구현하고, 그 구현한 것을 `SecurityManager`에 설정한다.
+* **`Subject`** : 어떤 한 로그인한 사용자를 표현. 현재 로그인된 사용자의 정보는 `SecurityUtils.getSubject()`을 통해서 얻는다. (`SecurityUtils`은 그 이외에도 유용하지만. ㅎㅎ) 그리고 로그인한 사용자의 권한 검사와 같은 내용들도 이를 통하여 수행한다.
+*  **Principal** : 어떤 사용자로서 로그인하기 위해 사용한 정보들. 예를 들어, username-password이거나 username-publickey 등의 정보를 묶어 부른다. 실제로 클래스는 없다. ㅎㅎ
+*  `UsernamePasswordToken`, *Credentials* : Principal의 일종으로 생각할 수 있고, 흔히 사용하는 username-password 쌍을 통한 로그인시에 사용.
 * **`CacheManager`** : `SecurityManager`에 설정한다. Shiro에서 캐쉬를 위해서 사용하거나, 위에서 소개한 Shiro Native Sessions을 활용하고, SessionDAO으로 `EnterpriseCacheSessionDAO`을 선택했다면, `SecurityManager`에 설정한 `CacheManager`을 활용한다.
 	*  설정하지 않으면, 기본은 `MemoryConstrainedCacheManager`이므로, 메모리를 많이 잡아먹고, 실제로 다른 서버와 클러스터링을 적용할 수 없는 테스트-개발용.
 	*  `EhCacheManager`을 활용해서 [Ehcache](http://ehcache.org/)을 활용할 수 있다. ehcache은 여러 서버들끼리 동기화를 설정할 수 있고, 캐쉬에 대한 정밀한 설정과 JVM 힙메모리 대신 디스크 임시 디렉토리를 활용하거나 하는 설정도 가능함. ㅎㅎ
 	*  다른 cache-backend을 적용하려면, 단순히 `EhCacheManager`와 같이 하나 구현하여 지정하면됨. 
-* `SecurityUtils`
 
 
 ---
 
-# 이하는 TBD...
+
+# Shiro을 적용한 기본 웹애플리케이션의 구조.
+
+이제 실제로 Shiro을 적용한 Java Servlet/JSP Web Application의 구조와 각 기능들에 따른 설정을 설명하려고함.
+
+기본적으로 Java Servlet만을 잘 지원한다면, 설정하는데 문제가 없음. 그리고 Spring WebMVC등의 이를 확장하고, 이 기본을 그대로 적용할 수 있는 대부분의 자바 웹프레임웍에는 거의 동일하게 적용할 수 있음.
+
+다만, 여기에서 보이는 예제와 소스는 Spring WebMVC등을 연동했을 때는 조금 또 달라지는 내용들임. 하지만, 먼저 이 소스와 설명을 이해하고 진행하기를 권함. 어차피 이 내용들을 변형한 내용들인데, 스프링을 적용했을 때는 완전히 달라보여서, 어떻게 생각하면 더 혼란스럽기 때문.
+
+여기에서 설명하는 내용들은 다음의 문서에 더 자세히 나와있음.
+
+http://shiro.apache.org/web.html
+
+또 Shiro의 Javadoc 문서도 가끔 들춰볼 필요가 있기는함. ㅎㅎㅎ
 
 
-* Servlet/JSP + Apache Shiro.
-* login, logout.
-* simple authenticated checks, roles checks.
+## 기본 동작 원리.
 
-* login failure message?
-	- ${shiroLoginFailure}
-	- request.getAttribute("shiroLoginFailure");
-	- 문자열임. ㅎㅎ 
+1. web.xml에 설정한 filter으로서 Shiro 보안을 적용할 영역을 설정한다.
+2. Shiro Filter을 위해서 설정을 적용한다.
+	- Java Servlet/JSP만을 위해서라면, Shiro자체적으로 제공하는 shiro.ini 설정 파일을 통해서 설정하거나.
+	- Spring WebMVC을 통해서라면, Shiro Filter에 연결할 `Environment`을 달리한다. (이상에서 소개한 **Spring WebMVC + Shiro 예제** 프로젝트를 살펴보길.)
 
- 
-* "remember me"?
-- SEE: http://shiro.apache.org/web.html#Web-RememberMeServices
-	    - rememberMe으로 얻은 권한은 authenticated이 아니라, user 상태임.
-	    - <shiro:authenticated/>이 아니라 <shiro:user/>이 다르고.
-	    - shiro.ini에서도 authc 필터가 아니라 user 필터로 검사.
+이렇게 보안이 적용되는데, 이상에서 소개한 개념들을 합쳐서 다음과 같이 처리된다.
+
+* (Java Servlet API의 Filter와는 다른, Shiro만의) Filter을 통해서 특정한 URL에 대해서 어떻게 처리할지를 설정한다.
+	* Login, Logout, 권한 검사 등등을 이런 방식으로 설정한다.
+* SecurityManager, SessionManager, SessionDAO, CacheManager등의 기본 Shiro 설정을 위한 객체들을 생성/설정한다.
+* Realm 객체를 생성하고 설정하여 실제 사용자 정보와 Shiro을 연결한다.
 
 
+## web.xml
 
+다음과 같이 설정하면 됨.
 
-자바 웹애플리케이션과의 연동.
+    <!-- classpath:shiro.ini을 로딩한다. -->
+    <listener>
+        <listener-class>org.apache.shiro.web.env.EnvironmentLoaderListener</listener-class>
+    </listener>
 
-서블릿과의 연계 방식.
+    <!-- EnvironmentLoaderListener이 읽어들인 설정에 근거하여 지정한 url-pattern에 대해서 Shiro을 적용. -->
+    <filter>
+        <filter-name>ShiroFilter</filter-name>
+        <filter-class>org.apache.shiro.web.servlet.ShiroFilter</filter-class>
+    </filter>
 
-shiro.ini
-
-[urls], filters
-
-login, logout, remember me.
-
-unauthorized-url, successful-url, logout-redirect-url.
-
-anon, authc, logout, perms, roles, user, ssl, noSessionCreation, rest, authcBasic
-
-JSP Taglib.
-
-Sessions, Caches: Native Sessions.
-	- SEE: http://shiro.apache.org/session-management.html
-	- http://grokbase.com/t/shiro/user/097qez5sys/exception-there-is-no-session-with-id
-	- securityManager.sessionManager와 sessionDAO을 같이 설정하니 잘 굴러가는듯.
-
-    	This implementation defaults to using an in-memory map-based CacheManager, which is great for testing but will typically not scale for production environments and could easily cause OutOfMemoryExceptions. Just don't forget to configure* an instance of this class with a production-grade CacheManager that can handle disk paging for large numbers of sessions and you'll be fine.
-
-    - securityManager.cacheManager도 같이 설정해줘야함. ㅎㅎ
+    <filter-mapping>
+        <filter-name>ShiroFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
+        <dispatcher>INCLUDE</dispatcher>
+        <dispatcher>ERROR</dispatcher>
+    </filter-mapping>
     
-끝.    
+
+
+## shiro.ini
+
+이상에서 소개한대로 `classpath:shiro.ini`을 설정으로 읽어서 사용함.
+
+자세한 설정에 대한 문서는 다음을 참고.
+
+http://shiro.apache.org/configuration.html
+
+
+### shiro.ini: main.
+
+`main` 섹션에는 Shiro 자체의 SecurityManager와 그와 관련된 객체들을 생성하고 그 객체들의 설정을 지정한다.
+
+기본적으로 SecurityManager을 생성하지 않으면, shiro.ini은 `DefaultWebSecurityManager`을 자동으로 생성한다. Javadoc을 살펴보고, 기본값은 내버려두고, 원하는 설정들만 바꿔봤음.
+
+	[main]
+    ;;; 세션 매니저는 shiro-native-session을 쓰도록.
+    sessionManager = org.apache.shiro.web.session.mgt.DefaultWebSessionManager
+    securityManager.sessionManager = $sessionManager
+    
+    ;;; cacheManager에 세션 객체를 저장하도록.
+    sessionDAO = org.apache.shiro.session.mgt.eis.EnterpriseCacheSessionDAO
+    securityManager.sessionManager.sessionDAO = $sessionDAO
+    
+    ;;; 요렇게 cacheManager을 생성.
+    cacheManager = org.apache.shiro.cache.ehcache.EhCacheManager
+    securityManager.cacheManager = $cacheManager
+
+이상의 예시에서 보듯이 `$`을 통해서 객체 이름을 참조할 수 있음. 특별한 이름들은 `securityManager`와 같은 미리 만들어진 객체들이 있음.
+
+
+#### ehcache.xml
+
+이상에서 설정한대로, `EhCacheManager`을 사용하면, 디폴트는 `classpath:ehcache.xml` 설정 파일을 읽어 ehcache을 초기화함.
+
+`shiro-activeSessionCache`을 키 이름으로 갖는 캐쉬를 반드시 만들어줘야함.
+
+    <cache name="shiro-activeSessionCache"
+           maxElementsInMemory="10000"
+           overflowToDisk="true"
+           eternal="true"
+           timeToLiveSeconds="0"
+           timeToIdleSeconds="0"
+           diskPersistent="true"
+           diskExpiryThreadIntervalSeconds="600"/>
+
+
+### filters.
+
+Shiro에서 어떤 URL은 지정한 Shiro Filter에 의해서 처리됨.
+
+참고: http://shiro.apache.org/web.html#Web-DefaultFilters
+
+필터들은 크게 다음과 같은 것들이 있고, 각 내용은 이상의 참고 링크를 확인하도록.
+
+	anon, authc, logout, perms, roles, user, ssl, noSessionCreation, rest, authcBasic
+
+기본적으로 login처리, login검사, 권한검사, logout처리 등등이 있고, 그것들 이외에 세션을 만들지 않을 URL이라던지 응용되는 URL 필터들이 있음.
+
+
+
+### shiro.ini: urls.
+
+어떤 URL에 대해서 *반드시 로그인해야함*이나 *Foo이라는 Role을 가진 사용자만*이라던지 하는 제약을 설정할 수 있음.
+
+    [urls]
+    ;;; ...
+    /restricted.jsp = user
+    /privileged.jsp = user, roles[special]
+
+이상에서 우편의 `user`, `roles`은 해당 URL에 적용할 Shiro Filter의 이름이고, 그 필터들이 적용됨으로서, 권한 검사를 수행하게됨.
+
+참고로 `user`은 "remember me"이나 "login"을 통해 획득한 subject을 체크하는 필터임.
+
+또한, `roles[special]`와 같이 지정하여, `special` role을 가진 사용자만 허용하겠다는 설정이 가능.
+
+* 참고: [URL 표현 방법](http://shiro.apache.org/web.html#Web-URLPathExpressions)
+
+
+만약, 권한을 요구하는데 로그인이 되어 있지 않은 상태, 즉, *Unauthenticated*이라면, 지정된 로그인 URL으로 이동함. (로그인 URL 설정은 이후에 설명.)
+
+로그인을 했더라도, 권한이 없거나, role을 갖지 못했다면 다음과 같이 설정한 URL으로 redirect.
+
+    roles.unauthorizedUrl = /unauthorized.jsp
+    perms.unauthorizedUrl = /unauthorized.jsp
+
+
+
+
+
+
+
+
+
+## 로그인 처리.
+
+직접 `SecurityManager`을 접근하여 로그인, 로그아웃 처리를 작성해도 되지만, Shiro Web Support은 Form-based Login을 기본적으로 제공함. ㅎㅎ
+
+* 그냥 Login HTML Form을 갖는 페이지 URL을 지정.
+	* 그리고 `<form>`은 `action`은 빈 문자열, `method`은 `POST`이어야함.
+	* 그러면, 자동으로 Shiro `authc` Filter이 로그인 처리를 담당함. ㅎㅎㅎ
+* (실제로 존재하지 않는) Logout URL을 지정.
+	* 그 *존재하지 않는 URL*을 방문하면, 자동으로 Shiro `logout` Filter이 로그아웃 처리.
+
+참고: http://shiro.apache.org/web.html#Web-FormbasedLogin
+
+    [main]
+    ;;; 로그인 페이지 URL
+    ;shiro.loginUrl = /login.jsp
+    authc.loginUrl = /login.jsp
+    
+    ;;; NOTE: login 성공시 이동할 URL.
+    authc.successUrl = /restricted.jsp	
+
+    ;;; NOTE: logout 이후 이동할 URL.
+    logout.redirectUrl= /index.jsp
+
+	;;; Login form fields name.
+	authc.usernameParam = username
+    authc.passwordParam = password
+
+
+    [urls]
+    ;;; 로그인 페이지 URL만 [main]에 지정한건 부족하고, 이렇게도 지정해줘야함. ㅎㅎ
+    /login.jsp = authc
+
+    ;;; NOTE: 로그아웃 처리 URL. 실제 존재하지 않는 파일임, 필터에 의해서 구현됨. 
+    /logout = logout
+
+
+그리고 로그인 페이지는 적당히 다음처럼.
+
+    <form action="" method="post">
+        <input type="text" name="username"/>
+        <input type="password" name="password"/>
+        <input type="checkbox" name="rememberMe" checked/>Remember Me?
+        <input type="submit"/>
+    </form>
+
+
+### "rememberMe"
+
+참고: http://shiro.apache.org/web.html#Web-RememberMeServices
+
+위에서 소개했듯이, "remember me"은 웹브라우저의 persisted-cookie을 활용하여, 웹브라우저를 모두 끄고, 서버측 세션이 expired된 이후에도 다시 방문했을때, 자동으로 로그인하도록 해주는 기능.
+
+이렇게 rememberMe으로 얻은 권한은 authenticated이 아니라, user 상태임.
+
+- JSP 커스텀 태그를 활용하여 인증 상태를 검사할때도 `<shiro:authenticated/>`이 아니라 `<shiro:user/>`을 사용하고.
+- `shiro.ini`에서도 `authc` 필터가 아니라 `user` 필터만 rememberMe 상태를 인정함.
+
+
+    [main]
+    ;;; form-based-login에서 login.jsp에서 rememberMe 체크 필드의 name.
+    authc.rememberMeParam = rememberMe
+    
+    ;;; rememberMe 기능을 위해서 웹브라우저의 어떤 쿠키 이름으로 저장할지를 지정.
+    securityManager.rememberMeManager.cookie.name = rememberMeCookie
+    
+
+
+
+### 로그인 실패?
+
+Form-based Login을 적용했는데, 아이디가 없거나, 비밀번호가 맞지 않아서 로그인을 하지 못할때, 해당 JSP에서는 `shiroLoginFailure` attribute을 검사해서 에러가 있는지, 어떤 에러인지 알아볼 수 있음.
+
+	<%-- JSP이라면... --%>
+	${shiroLoginFailure}
+    
+    /* Java코드라면... --%>
+	request.getAttribute("shiroLoginFailure");
+    
+다만, `Throwable`이 아니라, 그냥 문자열임. ㅎㅎ;;
+
+그리고 이 attribute의 이름도 설정하여 변경이 가능.
+
+	[main]
+    ;;; NOTE: 로그인 실패시 loginUrl에서 사용가능한 request-attribute키 이름. (디폴트: shiroLoginFailure)
+    ;authc.failureKeyAttribute = shiroLoginFailure
+
+
+
+
+
+
+### shiro.ini: users, roles.
+
+그렇게 좋은 방법은 아니겠지만, (*그래도 가끔은 쓸만할만한 방법으로*) `shiro.ini`에 `users`, `roles` 섹션에 하드코딩으로 사용자-비밀번호와 role등을 지정이 가능함. ㅎㅎ
+
+그리고 이 예제에서도 그렇게 설정한 하나의 사용자와 비밀번호를 예시로 보임.
+
+    [users]
+    admin = 1234
+
+DB의 사용자-비밀번호을 저장하고 이와 연결하기 위해서는 다음의 Realm을 설정해야함.
+
+이 예제 소스에서는 보이지 않지만, 이상에서 소개한 **Spring WebMVC와의 연동**에서는 그렇게 하는 것을 보이므로 참고바람.
+
+
+
+
+
+## JSP Tag Library.
+
+로그인된 상황을 검사하거나, 권한을 검사하거나, 로그인된 사용자 정보를 보이거나 하는 JSP에서 일반적인 상황에 활용할 수 있는 JSP 커스텀 태그들도 같이 제공.
+
+참고: http://shiro.apache.org/web.html#Web-JSP%2FGSPTagLibrary
+
+
+
+
+## 그 이외에...
+
+나머지 몇가지 주제들이 더 있는데...
+
+- Spring와의 연동
+- Realm을 구현한 사용자 인증 및 권한 정보 제공하기.
+- 해쉬값으로 로그인 암호를 안전하게 처리하는 credential matchers, cryptograpy.
+- Java Annotations, AOP을 활용한 메서드에 직접 보안 적용.
+- Login, Logout등 Shiro 이벤트에 대한 Listener을 등록하여, 추가적인 처리를 구현하기.
+
+
+...이들에 대해서는 ** https://github.com/ageldama/shiro-spring-web ** 에서 설명하도록 하겠음. 참고바람.
+
+
+
+
