@@ -111,12 +111,39 @@ simply-shiro-web
 ## 기타.
 
   * 원래는 [logback](http://logback.qos.ch/)을 logging으로 [사용/설정](http://shiro.apache.org/webapp-tutorial.html#project-setup)이 원래 Shiro문서에 소개된 내용임.
-  	* ㅎㅎ 그리고 log4j보다는 logback이 더 나을거 같음. 그러나 저는 그냥 일단 log4j으로 예제를 올렸습니다. 꼭 log4j을 쓸 필요는 없고, 가능하면 logback쓰세요. ㅎㅎㅎ
+  	* ㅎㅎ 그리고 log4j보다는 logback이 더 나을거 같음. 꼭 log4j을 쓸 필요는 없고, 가능하면 logback쓰세요. ㅎㅎㅎ
+  	* logback이 초기화 성능이나 대부분의 경우에 훨씬 가볍고, 설정도 쓸만함. ㅎㅎ
+  	* 어차피 제대로 로깅 관련을 정리하면, [slf4j](http://www.slf4j.org/)을 사용하여 코드에서 로그를 찍고, 그 내용을 log4j, logback등의 logging-backend에서 출력하므로, 코드는 변할게 없음.
+  		* 참고: [LOGBACK 사용해야 하는 이유 (REASONS TO PREFER LOGBACK OVER LOG4J)](http://beyondj2ee.wordpress.com/2012/11/09/logback-%EC%82%AC%EC%9A%A9%ED%95%B4%EC%95%BC-%ED%95%98%EB%8A%94-%EC%9D%B4%EC%9C%A0-reasons-to-prefer-logback-over-log4j/)
+  		* 참고: [LOG4J에서 LOGBACK으로 마이그레이션 하기 ( MIGRATE FROM LOG4J TO LOGBACK)](http://beyondj2ee.wordpress.com/2013/11/05/log4j%EC%97%90%EC%84%9C-logback%EC%9C%BC%EB%A1%9C-%EB%A7%88%EC%9D%B4%EA%B7%B8%EB%A0%88%EC%9D%B4%EC%85%98-%ED%95%98%EA%B8%B0-migrate-from-log4j-to-logback/)
 
 
 - - -
 
 
+# Concepts
+
+
+## 몇가지 용어들.
+
+* **Roles**, **Permissions**
+* **Remember Me**
+
+
+## 주요 클래스, 인터페이스들.
+
+* `SecurityManager`
+* `SessionManager`, `SessionDAO`
+* `Realm`
+* `Subject`, `Principal` 
+*  `UsernamePasswordToken`, *Credentials* 
+* `CacheManager`
+* `SecurityUtils`
+
+
+---
+
+# 이하는 TBD...
 
 
 * Servlet/JSP + Apache Shiro.
