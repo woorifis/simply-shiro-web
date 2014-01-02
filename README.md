@@ -113,6 +113,7 @@ simply-shiro-web
   * 원래는 [logback](http://logback.qos.ch/)을 logging으로 [사용/설정](http://shiro.apache.org/webapp-tutorial.html#project-setup)이 원래 Shiro문서에 소개된 내용임.
   	* ㅎㅎ 그리고 log4j보다는 logback이 더 나을거 같음. 꼭 log4j을 쓸 필요는 없고, 가능하면 logback쓰세요. ㅎㅎㅎ
   	* logback이 초기화 성능이나 대부분의 경우에 훨씬 가볍고, 설정도 쓸만함. ㅎㅎ
+  		* XML으로 설정하는건 정말 끔찍한데, 융통성도 없고, 마냥 길어만 지기 쉬움. `src/main/resources/logback.groovy`에 간략한 그루비 코드로 설정하고 있음.
   	* 어차피 제대로 로깅 관련을 정리하면, [slf4j](http://www.slf4j.org/)을 사용하여 코드에서 로그를 찍고, 그 내용을 log4j, logback등의 logging-backend에서 출력하므로, 코드는 변할게 없음.
   		* 참고: [LOGBACK 사용해야 하는 이유 (REASONS TO PREFER LOGBACK OVER LOG4J)](http://beyondj2ee.wordpress.com/2012/11/09/logback-%EC%82%AC%EC%9A%A9%ED%95%B4%EC%95%BC-%ED%95%98%EB%8A%94-%EC%9D%B4%EC%9C%A0-reasons-to-prefer-logback-over-log4j/)
   		* 참고: [LOG4J에서 LOGBACK으로 마이그레이션 하기 ( MIGRATE FROM LOG4J TO LOGBACK)](http://beyondj2ee.wordpress.com/2013/11/05/log4j%EC%97%90%EC%84%9C-logback%EC%9C%BC%EB%A1%9C-%EB%A7%88%EC%9D%B4%EA%B7%B8%EB%A0%88%EC%9D%B4%EC%85%98-%ED%95%98%EA%B8%B0-migrate-from-log4j-to-logback/)
@@ -123,21 +124,38 @@ simply-shiro-web
 
 # Concepts
 
+우선 실제 코드에 대한 내용을 시작하기 전에 몇가지 용어들(terms)을 소개하고 시작하려고함.
+
+어차피 대부분 코드를 읽으면서 문맥을 통해 파악해도 괜찮으므로, 건너뛰어도 좋음. ㅎㅎ
+
+실제 클래스가 있는 경우에는 클래스 이름으로 설명하였고, 클래스는 직접적으로 들어 설명하기는 그렇고, 개념/기능으로서만 존재한다면 이는 용어로만 소개한다.
 
 ## 몇가지 용어들.
 
-* **Roles**, **Permissions**
-* **Remember Me**
+* **Roles** : 어떤 사용자가 로그인(authenticated)하였을때, 그에게 부여된 행위 역할. 혹은 어떤 그룹(groups)에 속한다와 같은 내용을 표현.
+*  **Permissions** : Roles와 유사하지만, 개별 하나의 행위에 대한 권한을 의미함. Roles의 역할이 어떤 행위들의 묶음이나, 어떤 그룹, 어떤 집합에 속함을 표현하는데 적합하다면, Permission은 어떤 행위(verbs)이나 어떤 특정 대상에 대한 행위를 표현.
+* **Remember Me** : 모든 웹브라우저를 닫고, 시간이 경과하여 세션이 종료된 다음에도 웹브라우저의 보관되는 쿠키 등을 활용하여 다시 방문하였을 때, 자동적으로 로그인 상태로 남겨놓는다. 
+	* "*로그인된 상태*"는 *Authenticated*이라고 부르는데, Shiro은 자체적으로 "*Remember Me*"을 통해서 획득한 로그인 상태에 대해서는 "*user*"이라고 부른다. (예: 직접 이번 세션에서 로그인한 경우엔 `@RequiresAuthentication`으로 검사하지만, "Remember Me"으로 획득한 로그인은 `@RequiresAuthentication`에서 실패한다. 대신 "Remember Me" 획득도 인정해주는 `@RequiresUser`을 구분한다.)
 
 
 ## 주요 클래스, 인터페이스들.
 
-* `SecurityManager`
-* `SessionManager`, `SessionDAO`
-* `Realm`
-* `Subject`, `Principal` 
+* **`SecurityManager`** : 실제로 주어진 아이디-비밀번호가 맞는지 일치를 체크하거나, 그에 따라서 로그인한 결과 세션을 발급하여 로그인 처리를 수행하거나, 로그아웃을 수행하거나, 세션에 주어진 권한-역할 등을 검사하거나 하는 역할을 한다. 이후에 소개하는 `SessionManager`, `Realm`등에 그런 개별 작업들을 위임한다.
+	* 실제 구현체는 자바 애플리케이션으로 구성할 때와 자바 웹애플리케이션으로 구성할 때 사용할 수 있는, 미리 작성-구성된 클래스들을 제공한다.
+	* `DefaultSecurityManager`, `DefaultWebSecurityManager`인데, 이들은 각각 `SessionManager`이기도 하고, `SessionDAO`, `CacheManager`, `Realm`들을 갖는데, 이러한 구성은 사용하는 방법에 따라서 설정하여 원하는대로 구성이 가능하다.
+* **`SessionManager`** : 세션의 발급 등과 관련. 대부분의 경우에는 `DefaultSecurityManager`, `DefaultWebSecurityManager`을 사용함에 따라서 알아서 잘 구성되고, 잘 동작한다. ㅎㅎ
+	1. Servlet Container에서 제공하는 `HttpSession`을 세션으로 사용하려면, `SecurityManager`에 `ServletContainerSessionManager`을 설정한다.
+	2. Shiro이 구현하고 관리하는 Session인 Native Sessions을 활용하려면, `DefaultWebSessionManager`을 `SecurityManager`에 설정한다. 
+* **`SessionDAO`** : 세션을 어디에 저장하고 관리하는지에 대한 실제 내용.
+	* SessionManager을 Shiro Native Session을 사용하도록 설정했다면, Map을 통해 구현한 테스트용인 `MemorySessionDAO`이나, 이후에 소개할 CacheManager을 활용하는 `EnterpriseCacheSessionDAO`을 설정한다. 
+* **`Realm`** : 
+* `Subject`
+*  `Principal` 
 *  `UsernamePasswordToken`, *Credentials* 
-* `CacheManager`
+* **`CacheManager`** : `SecurityManager`에 설정한다. Shiro에서 캐쉬를 위해서 사용하거나, 위에서 소개한 Shiro Native Sessions을 활용하고, SessionDAO으로 `EnterpriseCacheSessionDAO`을 선택했다면, `SecurityManager`에 설정한 `CacheManager`을 활용한다.
+	*  설정하지 않으면, 기본은 `MemoryConstrainedCacheManager`이므로, 메모리를 많이 잡아먹고, 실제로 다른 서버와 클러스터링을 적용할 수 없는 테스트-개발용.
+	*  `EhCacheManager`을 활용해서 [Ehcache](http://ehcache.org/)을 활용할 수 있다. ehcache은 여러 서버들끼리 동기화를 설정할 수 있고, 캐쉬에 대한 정밀한 설정과 JVM 힙메모리 대신 디스크 임시 디렉토리를 활용하거나 하는 설정도 가능함. ㅎㅎ
+	*  다른 cache-backend을 적용하려면, 단순히 `EhCacheManager`와 같이 하나 구현하여 지정하면됨. 
 * `SecurityUtils`
 
 
@@ -165,13 +183,6 @@ simply-shiro-web
 
 
 
-Authentication, Authorization의 차이.
-
-Permissions, Roles.
-
-Realms, SecurityManager, SessionManager, SessionDAO, Principals, Subject.
-
-
 자바 웹애플리케이션과의 연동.
 
 서블릿과의 연계 방식.
@@ -196,3 +207,5 @@ Sessions, Caches: Native Sessions.
     	This implementation defaults to using an in-memory map-based CacheManager, which is great for testing but will typically not scale for production environments and could easily cause OutOfMemoryExceptions. Just don't forget to configure* an instance of this class with a production-grade CacheManager that can handle disk paging for large numbers of sessions and you'll be fine.
 
     - securityManager.cacheManager도 같이 설정해줘야함. ㅎㅎ
+    
+끝.    
